@@ -142,7 +142,7 @@ img = get(hObject, 'CData');
 min_threshold = img(y,x) - threshold;
 max_threshold = img(y, x) + threshold;
 
-%calculate the range for filter and image 
+%calculate the range 
 rangeY = y - displacement : y + displacement;
 rangeX = x - displacement : x + displacement;
 filterRangeX = rangeX - x + displacement + 1
