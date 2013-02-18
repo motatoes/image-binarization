@@ -22,7 +22,7 @@ function varargout = inteface(varargin)
 
 % Edit the above text to modify the response to help inteface
 
-% Last Modified by GUIDE v2.5 16-Feb-2013 14:21:07
+% Last Modified by GUIDE v2.5 18-Feb-2013 12:43:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -111,24 +111,23 @@ function uipushtool1_ClickedCallback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [filename, pathname]=uigetfile({ '*.jpg;*.png;*.gif', 'Image files';
-                            '*', 'all files'}, 'Select an image ...' )
+                            '*', 'all files'}, 'Select an image ...' );
 
 fullpath = strcat(pathname,filename);
-X = rgb2gray(imread(fullpath));
-ih = imshow(X,'Parent' , handles.plot_image);
+handles.original_image = rgb2gray(imread(fullpath));
+ih = imshow(handles.original_image, 'Parent', handles.plot_image);
 %Now add an event handler to the image on click
-set(ih,'buttonDownFcn',{@plot_image_ButtonDownFcn});
-
-
+set(ih,'buttonDownFcn', { @plot_image_ButtonDownFcn, handles.original_image }  );
+set(handles.apply_btn,'CallBack', { @apply_btn_Callback, ih,handles.original_image });
 
 % --- Executes on mouse press over axes background.
-function plot_image_ButtonDownFcn(hObject, eventdata, handles)
+function plot_image_ButtonDownFcn(hObject, eventdata, original_img)
 % hObject    handle to plot_image (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-displacement = 50
-threshold = 10
+displacement = 50;
+threshold = 10;
 
 [x, y] = ginput(1);
 y = ceil(y);
@@ -137,10 +136,9 @@ x = ceil(x);
 x(x<50) = displacement + 1
 y(y<50) = displacement + 1
 
-img = get(hObject, 'CData');
 
-min_threshold = img(y,x) - threshold;
-max_threshold = img(y, x) + threshold;
+min_threshold = original_img(y, x);
+%max_threshold = 255;
 
 %calculate the range for filter and image 
 rangeY = y - displacement : y + displacement;
@@ -149,11 +147,41 @@ filterRangeX = rangeX - x + displacement + 1
 filterRangeY = rangeY - y + displacement + 1
 
 filter( filterRangeY, filterRangeX) = ...
-                 img( rangeY, rangeX ) >= min_threshold & ...
-                 img( rangeY, rangeX ) <= max_threshold
-
-img( rangeY, rangeX ) = int8(img( rangeY, rangeX )) .* int8(filter);
-
-set(hObject, 'CData', img);
+                 original_img( rangeY, rangeX ) >= min_threshold 
+original_img( rangeY, rangeX ) = double(original_img( rangeY, rangeX )) .* double(filter);
+handles.plot = hObject
+set(hObject, 'CData', original_img);
     
         
+
+
+% --- Executes on selection change in listbox1.
+function listbox1_Callback(hObject, eventdata, handles)
+% hObject    handle to listbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns listbox1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from listbox1
+
+
+% --- Executes during object creation, after setting all properties.
+function listbox1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to listbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in apply_btn.
+function apply_btn_Callback(hObject, eventdata, ih, original_image)
+% hObject    handle to apply_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+img = niblack(original_image);
+set(ih, 'CData',  img);
