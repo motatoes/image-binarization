@@ -22,7 +22,7 @@ function varargout = inteface(varargin)
 
 % Edit the above text to modify the response to help inteface
 
-% Last Modified by GUIDE v2.5 18-Feb-2013 12:43:36
+% Last Modified by GUIDE v2.5 20-Feb-2013 17:33:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -45,7 +45,7 @@ end
 
 
 % --- Executes just before inteface is made visible.
-function inteface_OpeningFcn(hObject, eventdata, handles, varargin)
+function inteface_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -63,7 +63,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = inteface_OutputFcn(hObject, eventdata, handles) 
+function varargout = inteface_OutputFcn(~, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -73,68 +73,40 @@ function varargout = inteface_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
-% --- Executes when figure1 is resized.
-function figure1_ResizeFcn(hObject, eventdata, handles)
-% hObject    handle to figure1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes during object creation, after setting all properties.
-function axes1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to axes1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-
-
-% Hint: place code in OpeningFcn to populate axes1
- 
-% --- Executes during object creation, after setting all properties.
-function figure1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to figure1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-
-% --- Executes during object creation, after setting all properties.
-function toolbar_gradient_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to toolbar_gradient (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-
 % --------------------------------------------------------------------
-function uipushtool1_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool1 (see GCBO)
+function open_toolbar_ClickedCallback(~, ~, handles)
+% hObject    handle to open_toolbar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+%allow the user to select a file
 [filename, pathname]=uigetfile({ '*.jpg;*.png;*.gif', 'Image files';
                             '*', 'all files'}, 'Select an image ...' );
-
 fullpath = strcat(pathname,filename);
-handles.original_image = rgb2gray(imread(fullpath));
-ih = imshow(handles.original_image, 'Parent', handles.plot_image);
+
+%load the image and show it in the axis
+original_image = rgb2gray(imread(fullpath));
+ih = imshow(original_image, 'Parent', handles.plot_image);
+
 %Now add an event handler to the image on click
-set(ih,'buttonDownFcn', { @plot_image_ButtonDownFcn, handles.original_image }  );
-set(handles.apply_btn,'CallBack', { @apply_btn_Callback, ih,handles.original_image });
+set(ih,'buttonDownFcn', { @plot_image_ButtonDownFcn, original_image }  );
+set(handles.apply_btn,'CallBack', { @apply_btn_Callback, handles, ih, original_image });
 
 % --- Executes on mouse press over axes background.
-function plot_image_ButtonDownFcn(hObject, eventdata, original_img)
+function plot_image_ButtonDownFcn(hObject, ~, original_img)
 % hObject    handle to plot_image (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 displacement = 50;
-threshold = 10;
+
 
 [x, y] = ginput(1);
 y = ceil(y);
 x = ceil(x);
 %if it's too close to the boundary, just make it = displacement + 1
-x(x<50) = displacement + 1
-y(y<50) = displacement + 1
+x(x<50) = displacement + 1;
+y(y<50) = displacement + 1;
 
 
 min_threshold = original_img(y, x);
@@ -143,31 +115,21 @@ min_threshold = original_img(y, x);
 %calculate the range for filter and image 
 rangeY = y - displacement : y + displacement;
 rangeX = x - displacement : x + displacement;
-filterRangeX = rangeX - x + displacement + 1
-filterRangeY = rangeY - y + displacement + 1
+filterRangeX = rangeX - x + displacement + 1;
+filterRangeY = rangeY - y + displacement + 1;
 
 filter( filterRangeY, filterRangeX) = ...
-                 original_img( rangeY, rangeX ) >= min_threshold 
+                 original_img( rangeY, rangeX ) >= min_threshold ;
 original_img( rangeY, rangeX ) = double(original_img( rangeY, rangeX )) .* double(filter);
-handles.plot = hObject
+
 set(hObject, 'CData', original_img);
     
         
 
 
-% --- Executes on selection change in listbox1.
-function listbox1_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns listbox1 contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from listbox1
-
-
 % --- Executes during object creation, after setting all properties.
-function listbox1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to listbox1 (see GCBO)
+function thresholding_lstbox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to thresholding_lstbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -179,9 +141,17 @@ end
 
 
 % --- Executes on button press in apply_btn.
-function apply_btn_Callback(hObject, eventdata, ih, original_image)
+function apply_btn_Callback(~, ~, handles, ih, original_image)
 % hObject    handle to apply_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-img = niblack(original_image);
-set(ih, 'CData',  img);
+selected_item = get(handles.thresholding_lstbox,'value');
+
+if (selected_item == 1) %niblack
+    img = niblack(original_image);
+elseif (selected_item == 2) %sauvola
+    
+end        
+
+%now set the image based on the selected listbox item
+set(ih, 'CData',  im2uint8(img));
