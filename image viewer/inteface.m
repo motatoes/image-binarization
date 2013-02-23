@@ -98,8 +98,6 @@ function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
 
-    displacement = 50;
-
 
     [x, y] = ginput(1);
     y = ceil(y);
@@ -113,18 +111,16 @@ function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
     %max_threshold = 255;
 
     %calculate the range for filter and image 
-    %rangeY = y - displacement : y + displacement;
-    %rangeX = x - displacement : x + displacement;
     [sizeY, sizeX] = size(original_img)
     rangeY = 1 : sizeY;
     rangeX = 1 : sizeX;
-    filterRangeX = rangeX - x + displacement + 1;
-    filterRangeY = rangeY - y + displacement + 1;
-
+    
+    %apply the filter
     filter( rangeY, rangeX) = ...
                      original_img( rangeY, rangeX ) >= min_threshold ;
     original_img( rangeY, rangeX ) = double(original_img( rangeY, rangeX )) .* double(filter);
 
+     %now show the image
     imshow(original_img, 'Parent', handles.plot_processed);
 
 
