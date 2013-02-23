@@ -90,7 +90,7 @@ function open_toolbar_ClickedCallback(~, ~, handles)
 
     %Now add an event handler to the image on click
     set(ih,'buttonDownFcn', { @plot_image_ButtonDownFcn, handles, original_image }  );
-    set(handles.apply_btn,'CallBack', { @apply_btn_Callback, handles, ih, original_image });
+    set(handles.apply_btn,'CallBack', { @apply_btn_Callback, handles, original_image });
 
 % --- Executes on mouse press over axes background.
 function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
@@ -105,20 +105,23 @@ function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
     y = ceil(y);
     x = ceil(x);
     %if it's too close to the boundary, just make it = displacement + 1
-    x(x<50) = displacement + 1;
-    y(y<50) = displacement + 1;
+    %x(x<50) = displacement + 1;
+    %y(y<50) = displacement + 1;
 
 
     min_threshold = original_img(y, x);
     %max_threshold = 255;
 
     %calculate the range for filter and image 
-    rangeY = y - displacement : y + displacement;
-    rangeX = x - displacement : x + displacement;
+    %rangeY = y - displacement : y + displacement;
+    %rangeX = x - displacement : x + displacement;
+    [sizeY, sizeX] = size(original_img)
+    rangeY = 1 : sizeY;
+    rangeX = 1 : sizeX;
     filterRangeX = rangeX - x + displacement + 1;
     filterRangeY = rangeY - y + displacement + 1;
 
-    filter( filterRangeY, filterRangeX) = ...
+    filter( rangeY, rangeX) = ...
                      original_img( rangeY, rangeX ) >= min_threshold ;
     original_img( rangeY, rangeX ) = double(original_img( rangeY, rangeX )) .* double(filter);
 
@@ -140,22 +143,24 @@ function thresholding_lstbox_CreateFcn(hObject, eventdata, handles)
 
 
 % --- Executes on button press in apply_btn.
-function apply_btn_Callback(~, ~, handles, ih, original_image)
+function apply_btn_Callback(~, ~, handles, original_image)
     % hObject    handle to apply_btn (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
     selected_item = get(handles.thresholding_lstbox,'value');
 
+    
     if (selected_item == 1) %niblack
         img = niblack(original_image);
     elseif (selected_item == 2) %sauvola
-
+    
+    elseif (selected_item == 3) %otsu
+        img = otsu(original_image);     
     end        
 
     %now set the image based on the selected listbox item
-
+    
    imshow(img, 'Parent', handles.plot_processed);
-
 % --- Executes on selection change in listbox2.
 function listbox2_Callback(hObject, eventdata, handles)
 % hObject    handle to listbox2 (see GCBO)
