@@ -25,7 +25,7 @@ function varargout = inteface(varargin)
 
     % Edit the above text to modify the response to help inteface
 
-    % Last Modified by GUIDE v2.5 02-Mar-2013 14:52:58
+    % Last Modified by GUIDE v2.5 19-Mar-2013 07:03:28
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -92,7 +92,7 @@ function open_toolbar_ClickedCallback(hObject, ~, handles)
 
     %load the image and show it in the axis
     handles.original_image = rgb2gray(imread(fullpath));
-    %save the value in the array
+    %save_toolbar the value in the array
     guidata(hObject,handles)
     
     
@@ -102,6 +102,29 @@ function open_toolbar_ClickedCallback(hObject, ~, handles)
     set(ih,'buttonDownFcn', { @plot_image_ButtonDownFcn, handles, handles.original_image}  );
     set(handles.apply_btn,'CallBack', { @apply_btn_Callback, handles, handles.original_image });
 end
+
+%saving a processed image %%
+
+
+% --------------------------------------------------------------------
+function save_toolbar_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to save_toolbar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    %allow the user to select a file
+    [filename, pathname]=uiputfile({  '*.png', 'PNG';'*.jpg', 'Jpeg'; 'gif', 'GIF';
+                                    '*', 'all files'}, 'Save the processed image ...' );
+    fullpath = strcat(pathname,filename);
+
+    %load the image from the axis
+    X = getimage(handles.plot_processed);
+
+    imwrite(X, fullpath);
+
+
+end
+
+
 % --- Executes on mouse press over axes background.
 function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
 
@@ -118,162 +141,15 @@ function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
     %consider neighbouring 4 pixels or 8 pixels?
     pixelmode_8n = get(handles.radiobtn_8n,'value');
     
-    [midX, midY] = ginput(1);
-    midY = ceil(midY);
-    midX = ceil(midX);
+    seed = ginput(1);
+    midY = ceil(seed(2));
+    midX = ceil(seed(1));
 
-    [sizey, sizex] = size(original_img);
-    
-    import java.util.LinkedList;%for using queues
- 
-    threshold = original_img(midY,midX);
-    
-    q = LinkedList();
-    q.add([ midY, midX ]);
-    added = zeros(sizey,sizex);
+    img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite);
 
-    if (lighterToblack == 1)
-        new_px_value = 0; 
-    elseif (darkerToWhite == 1)
-        new_px_value = 255;
-    end
-
-    while (~q.isEmpty() )
-
-        
-        %remove the next elem from the queue
-        item = q.remove();
-        y = item(1);
-        x = item(2);
-        
-        if (lighterToblack == 1)
-            condition = original_img(y,x) >= threshold;
-        elseif (darkerToWhite == 1)
-            condition = original_img(y,x) <= threshold;
-        end
-        
-        %do thresholding on that element
-        if (condition == 1)
-            original_img(y,x) = new_px_value;
-            %mark it as done
-            added(y,x) = 1; 
-            
-            %add the neighbour pixels
-            %to the element if it has not
-            %already been considered
-            if (x ~= 1 && added(y,x-1) ~= 1)
-                q.add([y,x-1]);
-                added(y,x-1) = 0;
-            end
-        
-            if (added(y,x+1) ~= 1)
-                q.add([y, x+1]);
-                added(y,x+1) = 0;
-            end
-        
-            if (y ~= 1 && added(y-1,x) ~= 1)
-                q.add([y-1,x]);
-                added(y-1,x) = 0;
-            end
-        
-            if (added(y+1,x) ~= 1)
-                q.add([y+1,x]);
-                added(y+1,x) = 0;
-            end
-            
-            if (pixelmode_8n == 1)
-                %we need to add diagonal pixels as well
-                if (x ~= 1 && y~=1 && added(y-1,x-1) ~= 1)
-                    q.add([y-1,x-1]);
-                    added(y-1,x-1) = 0;
-                end
-
-                if (y~=1 && added(y-1,x+1) ~= 1)
-                    q.add([y-1,x+1]);
-                    added(y-1,x+1) = 0;
-                end
-
-                if (x ~= 1 && added(y+1,x-1) ~= 1)
-                    q.add([y+1,x-1]);
-                    added(y+1,x-1) = 0;
-                end
-
-                if (added(y+1,x+1) ~= 1)
-                    q.add([y+1,x+1]);
-                    added(y+1,x+1) = 0;
-                end
-            end
-        end              
-    end
-    
-     imshow(original_img, 'Parent', handles.plot_processed);
-   
-    %nested function addNeighbour
-
-end
-% --- Executes during object creation, after setting all properties.
-function thresholding_lstbox_CreateFcn(hObject, eventdata, handles)
-    % hObject    handle to thresholding_lstbox (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    empty - handles not created until after all CreateFcns called
-
-    % Hint: listbox controls usually have a white background on Windows.
-    %       See ISPC and COMPUTER.
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-end
-% --- Executes on button press in apply_btn.
-function apply_btn_Callback(~, ~, handles, original_image)
-    % hObject    handle to apply_btn (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-    selected_item = get(handles.thresholding_lstbox,'value');
-
-    
-    if (selected_item == 1) %niblack
-        img = niblack(original_image);
-    elseif (selected_item == 2) %sauvola
-    
-    elseif (selected_item == 3) %otsu
-        img = otsu(original_image);     
-    end        
-
-    %now set the image based on the selected listbox item
-    
    imshow(img, 'Parent', handles.plot_processed);
 end
-% --- Executes on selection change in listbox2.
-function listbox2_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns listbox2 contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from listbox2
-end
-
-% --- Executes during object creation, after setting all properties.
-function listbox2_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to listbox2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-end
-% --- Executes on button press in pushbutton5.
-function pushbutton5_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-end
 % --------------------------------------------------------------------
 function groundtruth_toolbar_ClickedCallback(hObject, eventdata, handles)
 % hObject    handle to groundtruth_toolbar (see GCBO)
@@ -331,3 +207,57 @@ function pointThresholdTool_ClickedCallback(~, ~, handles)
 	set(handles.plot_processed, 'XLim', limits(1,:));
     
 end
+
+
+
+% --- Executes on button press in filter_apply_btn.
+function filter_apply_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to filter_apply_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    selected_item = get(handles.filter_lstbox,'value');
+
+    orig_img = handles.original_image;
+
+
+    if (selected_item == 1) %niblack
+        i = edge(orig_img,'canny');
+        %orig_img(i) = 255;
+    elseif (selected_item == 2)
+        i = edge(orig_img);
+        %orig_img(i) = 255;
+    elseif (selected_item ==3)
+        i = corner(orig_img);
+        %orig_img(i(:,2), i(:,1)) = 255;
+    end
+    imshow(i==0, 'Parent', handles.plot_processed);  
+    
+    handles.seed_points = i;
+    %save_toolbar the value in the array
+    guidata(hObject,handles)
+end
+
+
+% --- Executes on button press in use_as_seed_points_btn.
+function use_as_seed_points_btn_Callback(hObject, eventdata, handles)
+    % hObject    handle to use_as_seed_points_btn (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
+    [sp1, sp2] = find(handles.seed_points)
+    
+    len = size(sp1);
+
+    pixelmode_8n = 1;
+    darkerToWhite = 1;
+  
+    img = handles.original_image;
+sp1(1:10)
+sp2(1:10)
+    for (i = 1:len)
+        img = cell_propagate(img, [ sp1(i), sp2(i)] , pixelmode_8n, darkerToWhite);
+        imshow( img, 'Parent', handles.plot_processed);
+    end
+    
+
+end
+
