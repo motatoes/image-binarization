@@ -3,7 +3,7 @@
 function [result_bin] = otsu(I)
 
 nbins = 256; % Number of bins
-counts = imhist(I,nbins); % Each intensity increments the histogram from 0 to 255
+counts = imhist(I,nbins)  % Each intensity increments the histogram from 0 to 255
 p = counts / sum(counts); % Probabilities
 
 omega1 = 0;

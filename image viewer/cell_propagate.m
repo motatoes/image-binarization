@@ -11,8 +11,9 @@ function img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite)
     midX = ceil(seed(1));
     midY = ceil(seed(2));
 
-
+    
     [sizey, sizex] = size(original_img);
+    
     
     import java.util.LinkedList;%for using queues
  
@@ -20,7 +21,7 @@ function img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite)
     
     q = LinkedList();
     q.add([ midY, midX ]);
-    added = zeros(sizey,sizex);
+    added = logical ( zeros(sizey,sizex) );
 
     if (darkerToWhite == 1)
         new_px_value = 255;
@@ -31,7 +32,6 @@ function img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite)
 
         
         %remove the next elem from the queue
-        q.size
         item = q.remove();
         y = item(1);
         x = item(2);
@@ -57,7 +57,7 @@ function img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite)
                 added(y,x-1) = 0;
             end
         
-            if (added(y,x+1) ~= 1)
+            if ( x < sizex &&  added(y,x+1) ~= 1)
                 q.add([y, x+1]);
                 added(y,x+1) = 0;
             end
@@ -67,7 +67,7 @@ function img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite)
                 added(y-1,x) = 0;
             end
         
-            if (added(y+1,x) ~= 1)
+            if (y < sizey && added(y+1,x) ~= 1)
                 q.add([y+1,x]);
                 added(y+1,x) = 0;
             end
@@ -79,23 +79,24 @@ function img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite)
                     added(y-1,x-1) = 0;
                 end
 
-                if (y~=1 && added(y-1,x+1) ~= 1)
+                if ( x < sizex && y~=1 && added(y-1,x+1) ~= 1)
                     q.add([y-1,x+1]);
                     added(y-1,x+1) = 0;
                 end
 
-                if (x ~= 1 && added(y+1,x-1) ~= 1)
+                if (y < sizey && x ~= 1 && added(y+1,x-1) ~= 1)
                     q.add([y+1,x-1]);
                     added(y+1,x-1) = 0;
                 end
 
-                if (added(y+1,x+1) ~= 1)
+                if (y < sizey &&  x < sizex && added(y+1,x+1) ~= 1)
                     q.add([y+1,x+1]);
                     added(y+1,x+1) = 0;
                 end
             end
         end              
     end
-    
-    img = original_img;
+
+
+    img = added;%original_img;
 end

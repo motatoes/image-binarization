@@ -145,9 +145,11 @@ function plot_image_ButtonDownFcn(hObject, ~, handles, original_img)
     midY = ceil(seed(2));
     midX = ceil(seed(1));
 
-    img = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite);
+    points = cell_propagate(original_img, seed , pixelmode_8n, darkerToWhite);
+    
+    original_img(points(:)) = 255;
 
-   imshow(img, 'Parent', handles.plot_processed);
+   imshow(original_img, 'Parent', handles.plot_processed);
 end
 
 % --------------------------------------------------------------------
@@ -222,16 +224,32 @@ function filter_apply_btn_Callback(hObject, eventdata, handles)
 
     if (selected_item == 1) %niblack
         i = edge(orig_img,'canny');
+        result = (i==0);
         %orig_img(i) = 255;
     elseif (selected_item == 2)
         i = edge(orig_img);
+        result = (i==0);
         %orig_img(i) = 255;
     elseif (selected_item ==3)
-        i = corner(orig_img);
-        %orig_img(i(:,2), i(:,1)) = 255;
+        addpath fast
+        i = fast9(orig_img,25);
+        rmpath fast
+        
+        
+        
+        [y,x] = size(i)
+
+        for j=1:y
+            xl = i(j,1);
+            yl = i(j,2);
+            orig_img(yl:yl+3,xl:xl+3) =  255 ;
+            result = orig_img;
+        end
+        
+        
     end
-    imshow(i==0, 'Parent', handles.plot_processed);  
-    
+
+    imshow( result, 'Parent', handles.plot_processed);
     handles.seed_points = i;
     %save_toolbar the value in the array
     guidata(hObject,handles)
@@ -243,21 +261,56 @@ function use_as_seed_points_btn_Callback(hObject, eventdata, handles)
     % hObject    handle to use_as_seed_points_btn (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    [sp1, sp2] = find(handles.seed_points)
-    
-    len = size(sp1);
 
     pixelmode_8n = 1;
     darkerToWhite = 1;
   
     img = handles.original_image;
-sp1(1:10)
-sp2(1:10)
-    for (i = 1:len)
-        img = cell_propagate(img, [ sp1(i), sp2(i)] , pixelmode_8n, darkerToWhite);
-        imshow( img, 'Parent', handles.plot_processed);
+    [imy,imx] = size(img);
+    
+    img_bin = ones(imy,imx);
+
+    points = handles.seed_points;
+     
+    mean_value  = mean(double(img));
+
+
+    [y,x] = size(points)
+    values = ones(y,1);
+    
+    
+    
+    %get the values from the points
+    for (j = 1:y)
+        xl = points(j,1);
+        yl = points(j,2);
+        values(j,1) = img(yl,xl);
     end
     
+     figure;hist(values)
+       % get the binarized values
+     values_bin = otsu(uint8(values));
 
+     
+     %floodfill the corners based on where they are 
+     tic;
+     
+    for  j = 1:y 
+        xl = points(j,1);
+        yl = points(j,2);
+        xl
+        yl
+        %only flood foreground pixels that have not alraedy been flooded
+        if ( values_bin(j,1) == 0 &&  img(yl,xl) ~= 255 )
+            fg_points = cell_propagate(img, [ xl, yl] , pixelmode_8n, darkerToWhite);
+            img_bin(fg_points(:)) = 0;
+        end
+     
+        
+    end
+
+    
+    imshow( img_bin, 'Parent', handles.plot_processed);
+    toc;
 end
 
