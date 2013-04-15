@@ -9,7 +9,7 @@ function varargout = inteface(varargin)
     %      H = INTEFACE returns the handle to a new INTEFACE or the handle to
     %      the existing singleton*.
     %
-    %      INTEFACE('CALLBACK',hObject,eventData,handles,...) calls the local
+    %      INTEFACE('CALLBACfK',hObject,eventData,handles,...) calls the local
     %      function named CALLBACK in INTEFACE.M with the given input arguments.
     %
     %      INTEFACE('Property','Value',...) creates a new INTEFACE or raises the
@@ -25,7 +25,7 @@ function varargout = inteface(varargin)
 
     % Edit the above text to modify the response to help inteface
 
-    % Last Modified by GUIDE v2.5 19-Mar-2013 07:03:28
+    % Last Modified by GUIDE v2.5 10-Apr-2013 20:48:16
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -100,7 +100,7 @@ function open_toolbar_ClickedCallback(hObject, ~, handles)
 
     %Now add an event handler to the image on click
     set(ih,'buttonDownFcn', { @plot_image_ButtonDownFcn, handles, handles.original_image}  );
-    set(handles.apply_btn,'CallBack', { @apply_btn_Callback, handles, handles.original_image });
+    %set(handles.binarization_btn,'CallBack', { @apply_btn_Callback, handles, handles.original_image });
 end
 
 %saving a processed image %%
@@ -223,20 +223,17 @@ function filter_apply_btn_Callback(hObject, eventdata, handles)
 
 
     if (selected_item == 1) %niblack
-        i = edge(orig_img,'canny');
+        i = edge(orig_img,'canny',0.6);
         result = (i==0);
         %orig_img(i) = 255;
     elseif (selected_item == 2)
         i = edge(orig_img);
         result = (i==0);
         %orig_img(i) = 255;
-    elseif (selected_item ==3)
+    elseif (selected_item == 3)
         addpath fast
         i = fast9(orig_img,25);
         rmpath fast
-        
-        
-        
         [y,x] = size(i)
 
         for j=1:y
@@ -245,8 +242,9 @@ function filter_apply_btn_Callback(hObject, eventdata, handles)
             orig_img(yl:yl+3,xl:xl+3) =  255 ;
             result = orig_img;
         end
-        
-        
+    elseif (selected_item == 5)
+        figure;imhist(orig_img);
+        return;
     end
 
     imshow( result, 'Parent', handles.plot_processed);
@@ -261,56 +259,152 @@ function use_as_seed_points_btn_Callback(hObject, eventdata, handles)
     % hObject    handle to use_as_seed_points_btn (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-
-    pixelmode_8n = 1;
-    darkerToWhite = 1;
-  
-    img = handles.original_image;
-    [imy,imx] = size(img);
+% 
+%     pixelmode_8n = 1;
+%     darkerToWhite = 1;
+%   
+%     img = handles.original_image;
+%     [imy,imx] = size(img);
+%     
+%     img_bin = ones(imy,imx);
+% 
+%     points = handles.seed_points;
+%      
+%     mean_value  = mean(double(img));
+% 
+% 
+%     [y,x] = size(points)
+%     values = ones(y,1);
+%     
+%     
+%     
+%     %get the values from the points
+%     for (j = 1:y)
+%         xl = points(j,1);
+%         yl = points(j,2);
+%         values(j,1) = img(yl,xl);
+%     end
+%     
+%      figure;hist(values)
+%        % get the binarized values
+%      returnThreshold = 1;
+%      threshold = otsu(uint8(values), returnThreshold );
+% 
+%      addpath fast
+%      low_thresh_seed_points = fast9(img,15);
+%      rmpath fast
+%      [y,x] = size(low_thresh_seed_points)
+%      %floodfill the corners based on where they are 
+% 
+%      
+%     for  j = 1:y 
+%         xl = low_thresh_seed_points(j,1);
+%         yl = low_thresh_seed_points(j,2);
+%         xl
+%         yl
+%         %only flood foreground pixels that have not alraedy been flooded
+%         if ( img(yl,xl) < threshold &&  img(yl,xl) ~= 255 )
+%             tic;
+%             fg_points = cell_propagate(img, [ xl, yl] , pixelmode_8n, darkerToWhite);
+%             img_bin(fg_points(:)) = 0;
+%             toc;
+%         end
+%      
+%         
+%     end
+% 
+%     
     
-    img_bin = ones(imy,imx);
+     img = handles.original_image;
+     points = handles.seed_points; 
+     img_bin = use_corners_as_seed_points( img, points, 15);
+     imshow( img_bin, 'Parent', handles.plot_processed);
 
-    points = handles.seed_points;
-     
-    mean_value  = mean(double(img));
-
-
-    [y,x] = size(points)
-    values = ones(y,1);
-    
-    
-    
-    %get the values from the points
-    for (j = 1:y)
-        xl = points(j,1);
-        yl = points(j,2);
-        values(j,1) = img(yl,xl);
-    end
-    
-     figure;hist(values)
-       % get the binarized values
-     values_bin = otsu(uint8(values));
-
-     
-     %floodfill the corners based on where they are 
-     tic;
-     
-    for  j = 1:y 
-        xl = points(j,1);
-        yl = points(j,2);
-        xl
-        yl
-        %only flood foreground pixels that have not alraedy been flooded
-        if ( values_bin(j,1) == 0 &&  img(yl,xl) ~= 255 )
-            fg_points = cell_propagate(img, [ xl, yl] , pixelmode_8n, darkerToWhite);
-            img_bin(fg_points(:)) = 0;
-        end
-     
-        
-    end
-
-    
-    imshow( img_bin, 'Parent', handles.plot_processed);
-    toc;
 end
 
+
+% --- Executes on button press in evaluate_btn.
+function evaluate_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to evaluate_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    img_bin = getimage(handles.plot_processed);
+    GT = getimage(handles.plot_groundTruth);
+    
+    result = evaluate (img_bin,GT)
+    header = {'Precision' 'PSNR' 'NRM' 'MPM', 'DRD'}; %cell array of 1 by 4
+    xlswrite('ev.xls', header, 'Evaluation') % by defualt starts from A1
+    xlswrite('ev.xls', [result.Precision, result.PSNR, result.NRM, result.MPM, result.DRD], 'Evaluation','A2') % array under the header.     
+%     csvwrite('ev.csv', [result.Precision, result.PSNR, result.NRM, result.MPM, result.DRD])
+        
+end
+
+
+% --- Executes on button press in binarization_btn.
+function binarization_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to binarization_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    selected_item = get(handles.thresholding_lstbox,'value');
+    if (selected_item == 1) 
+           processed = niblack(handles.original_image);
+    elseif (selected_item == 2)
+           processed = 0;
+    elseif (selected_item == 3)
+           processed = otsu(handles.original_image);
+    end
+    
+    imshow(processed, 'Parent', handles.plot_processed);
+    
+end
+
+
+% --- Executes on button press in bulk_bin.
+function bulk_bin_Callback(hObject, eventdata, handles)
+    % hObject    handle to bulk_bin (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
+        %allow the user to select a file
+    [filename, pathname]=uigetfile({ '*.jpg;*.png;*.gif;*.bmp', 'Image files';
+                                '*', 'all files'}, 'Select an image ...', 'MultiSelect', 'on' )
+
+
+    if ( strcmp(class(filename), 'char') )
+        fullpaths = cell(1);
+        fullpaths{1} = strcat(pathname(:), filename)
+    else
+        
+           [y,x] = size(filename)
+            fullpaths = cell(x);
+
+        for i=1:x
+            fullpaths{i} = strcat(pathname,filename{i})
+        end
+    end
+    
+    filename(1)
+    filename(2)
+    filename{1}
+    filename{2}
+    fullpaths{1}
+    
+    bulk_corner_thresh(fullpaths, 25, 15, 'D:\Dropbox\Dropbox\bham\mini project 2\matlab\experiments\corner binarization\otsu_mutistage\handwritten09\')
+end
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over bulk_compare_btn.
+function bulk_compare_btn_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to bulk_compare_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+end
+
+
+% --- Executes on button press in bulk_compare_btn.
+function bulk_compare_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to bulk_compare_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    bulk_binarization
+end

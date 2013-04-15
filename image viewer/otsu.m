@@ -1,9 +1,13 @@
 %%ADAPTED FROM: http://stackoverflow.com/questions/10303229/implementing-otsu-binarization-for-faded-images-of-documents
 
-function [result_bin] = otsu(I)
+function [result_bin] = otsu(I, returnThreshold)
+
+if ~exist('returnThreshold')
+    returnThreshold=0;
+end
 
 nbins = 256; % Number of bins
-counts = imhist(I,nbins)  % Each intensity increments the histogram from 0 to 255
+counts = imhist(I,nbins);  % Each intensity increments the histogram from 0 to 255
 p = counts / sum(counts); % Probabilities
 
 omega1 = 0;
@@ -22,7 +26,10 @@ end
 sigma_b_squared_otsu = (mu1(end) .* omega1-mu1) .^2 ./(omega1 .* (1-omega1)); % Eq. (18
 [~,thres_level_otsu] = max(sigma_b_squared_otsu);
 
-%% calculate binary image
-result_bin = I >= (thres_level_otsu);
-
+if (returnThreshold == 1)
+    result_bin  = thres_level_otsu
+else 
+    %% calculate binary image
+    result_bin = I >= (thres_level_otsu);
+end
 

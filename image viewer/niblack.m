@@ -2,7 +2,7 @@
 % define parameters
 function [result_bin] = niblack(original_img)
 filt_radius = 25; % filter radius [pixels]
-k_threshold = 0.2; % std threshold parameter
+k_threshold = -0.2; % std threshold parameter
 
 %% load the image
 result = double(original_img); 
